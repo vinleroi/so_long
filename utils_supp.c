@@ -6,43 +6,37 @@
 /*   By: aahadji <aahadji@student.s19.be>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/02 12:34:54 by aahadji           #+#    #+#             */
-/*   Updated: 2025/07/12 12:22:02 by aahadji          ###   ########.fr       */
+/*   Updated: 2025/07/13 16:43:02 by aahadji          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "so_long.h"
 
-char	**copy_map(char **map, int width, int height)
+char	**copy_map(char **map, int height)
 {
-	char	**temp;
+	char	**copy;
 	int		i;
-	int		j;
 
-	i = 0;
-	temp = (char **)malloc(width * sizeof(char *));
-	if (!temp)
+	copy = malloc(sizeof(char *) * (height + 1));
+	if (!copy)
 		return (NULL);
-	while (temp[i])
-	{
-		temp[i] = (char *)malloc(height * sizeof(char));
-		if (!temp)
-			return (NULL);
-		i++;
-	}
 	i = 0;
-	j = 0;
-	while (temp[i])
+	while (i < height)
 	{
-		while (temp[j])
+		copy[i] = ft_strdup(map[i]);
+		if (!copy[i])
 		{
-			temp[i][j] = map[i][j];
-			j++;
+			while (--i >= 0)
+				free(copy[i]);
+			free(copy);
+			return (NULL);
 		}
-		j = 0;
 		i++;
 	}
-	return (temp);
+	copy[i] = NULL;
+	return (copy);
 }
+
 /**
  * probably an error occure here with the J that dont go to high
  */
@@ -59,16 +53,45 @@ void	free_tab(char **map, int i)
 	free(map);
 }
 
-int	ft_strncmp(const char *s1, const char *s2, size_t n)
+int	ft_strncmp(char *s1)
 {
-	size_t i;
+	size_t	i;
+	int		j;
+	char	*s2;
 
-	i = 0;
-	while (i < n && (s1[i] || s2[i]))
+	s2 = ".ber";
+	i = ft_strlen(s1);
+	if (i < 4)
+		return (-1);
+	i -= 4;
+	j = 0;
+	while (s1[i])
 	{
-		if (s1[i] != s2[i])
-			return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+		if (s1[i] != s2[j])
+			return (-1);
 		i++;
 	}
-	return (0);
+	return (1);
+}
+
+int	is_map_valid(char **map)
+{
+	int y;
+	int x;
+
+	if (!map)
+		return (0);
+	y = 0;
+	while (map[y])
+	{
+		x = 0;
+		while (map[y][x])
+		{
+			if (!is_valid_char(map[y][x]))
+				return (0);
+			x++;
+		}
+		y++;
+	}
+	return (1);
 }

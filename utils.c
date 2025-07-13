@@ -6,42 +6,35 @@
 /*   By: aahadji <aahadji@student.s19.be>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/19 21:10:53 by aahadji           #+#    #+#             */
-/*   Updated: 2025/07/04 17:29:05 by aahadji          ###   ########.fr       */
+/*   Updated: 2025/07/13 15:09:12 by aahadji          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "so_long.h"
 
-void	count_map_size(int fd, t_map *map)
+void	count_map_size(t_map *map)
 {
-	char	*line;
+	int	i;
+	int	width;
 
-	if (fd < 0)
-		error_exit("Invalid file descriptor.");
-	line = get_next_line(fd);
-	if (!line)
+	if (!map || !map->map || !map->map[0])
+		error_exit("Map is empty or NULL.");
+	width = ft_strlen(map->map[0]);
+	map->width = width;
+	map->height = 0;
+	i = 0;
+	while (map->map[i])
 	{
-		free(line);
-		error_exit("Empty file.");
-	}
-	map->width = ft_strlen(line);
-	free(line);
-	while ((line = get_next_line(fd)))
-	{
-		if ((int)ft_strlen(line) != map->width)
-		{
-			free(line);
-			error_exit("Map not rectangular.");
-		}
+		if ((int)ft_strlen(map->map[i]) != width)
+			error_exit("Map is not rectangular.");
 		map->height++;
-		free(line);
+		i++;
 	}
-	close(fd);
 }
 
 void	error_exit(char *msg)
 {
-	ft_printf(msg);
+	ft_putstr_fd(msg, 2);
 	exit(EXIT_FAILURE);
 }
 
@@ -80,4 +73,13 @@ t_point	find_player(char **map)
 	p.x = -1;
 	p.y = -1;
 	return (p);
+}
+
+int	file_exists(char *path)
+{
+	int fd = open(path, O_RDONLY);
+	if (fd < 0)
+		return (0);
+	close(fd);
+	return (1);
 }

@@ -6,7 +6,7 @@
 /*   By: aahadji <aahadji@student.s19.be>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/27 20:59:13 by aahadji           #+#    #+#             */
-/*   Updated: 2025/07/12 12:43:34 by aahadji          ###   ########.fr       */
+/*   Updated: 2025/07/13 16:44:35 by aahadji          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,27 +28,47 @@ void	load_sprites(t_game *game)
 			"sprites/collectible.xpm", &game->collect.w, &game->collect.h);
 }
 
-void	render_map(t_game *game)
+static void	graphics(t_game game)
 {
-	// Exemple basique : affiche 3x3 tiles
-	for (int y = 0; y < 3; y++)
+	game.mlx = mlx_init();
+	if (!game.mlx)
 	{
-		for (int x = 0; x < 3; x++)
-		{
-			mlx_put_image_to_window(game->mlx, game->win, game->floor.ptr, x
-				* TILE_SIZE, y * TILE_SIZE);
-			mlx_put_image_to_window(game->mlx, game->win, game->wall.ptr, x
-				* TILE_SIZE, y * TILE_SIZE);
-		}
+		ft_printf("Error initializing MLX.\n");
+		exit(EXIT_FAILURE);
 	}
+	game.win = mlx_new_window(game.mlx, 800, 600, "So Long");
+	if (!game.win)
+	{
+		ft_printf("Error creating window.\n");
+		exit(EXIT_FAILURE);
+	}
+	load_sprites(&game);
+	render_map(&game);
+	mlx_key_hook(game.win, handle_key, &game);
+	mlx_hook(game.win, 17, 0, close_window, &game);
+	mlx_loop(game.mlx);
 }
-static int	key_hook(int keycode)
+
+static void	init_game(t_map *map)
 {
-	ft_printf("keycode = %d\n", keycode);
-	// ex: si w
-	if (keycode == 119)
-		ft_printf("W pressed!\n");
-	return (0);
+	find_collectibles(map);
+	find_exit(map);
+	find_player(map->map);
+	if (map->collectible.max_collectibles == 0)
+	{
+		free_tab(map->map, map->height);
+		error_exit("Error: No collectibles found in the map.");
+	}
+	if (map->collectible.exit_found == 0 || map->collectible.exit_found > 1)
+	{
+		free_tab(map->map, map->height);
+		error_exit("Error: No exit found or to much in the map.");
+	}
+	if (find_player(map->map).x == -1 || find_player(map->map).y == -1)
+	{
+		free_tab(map->map, map->height);
+		error_exit("Invalid player position.");
+	}
 }
 
 int	main(int argc, char **argv)
@@ -56,21 +76,24 @@ int	main(int argc, char **argv)
 	t_game	game;
 	t_map	map;
 
-	if (argc != 2 || !ft_strcmp(argv[1], ".ber", ft_strlen(argv[1])))
+	if (argc != 2 || !ft_strncmp(argv[1]))
+		error_exit("Usage: ./so_long <map_file.ber>\n");
+	map.height = find_map_height(argv[1]);
+	map.map = create_map(argv[1], map.height);
+	if (is_map_valid(map.map) == -1)
 	{
-		ft_printf("Usage: ./so_long <map_file.ber>\n");
+		ft_printf("Error: Could not create map from file. main\n");
 		return (1);
 	}
-	if (!(map.map = create_map(argv[1])))
+	init_game(&map);
+	if (check_map(&map) == -1)
 	{
-		ft_printf("Error: Invalid map file.\n");
+		ft_printf("Error: Invalid map.\n");
+		free_tab(map.map, map.height);
 		return (1);
 	}
-	game.mlx = mlx_init();
-	game.win = mlx_new_window(game.mlx, 640, 480, "So Long");
-	load_sprites(&game);
-	mlx_hook(game.win, 2, 1L << 0, key_hook, &game);
-	render_map(&game);
-	mlx_loop(game.mlx);
-	return (0); // mais ton putain de truc . ber enculé
+	game.map = &map;
+	game.map->move_count = 0;
+	graphics(game);
+	return (0);
 }
